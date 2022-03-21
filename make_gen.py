@@ -174,7 +174,8 @@ file.write("fclean:\t\tclean\n")
 if libft_ok == "o":
     file.write("\t\t\t\t\t\t@make -C ${LIB_DIR} fclean\n")
 file.write("\t\t\t\t\t\t@${RM} ${NAME} ${NAME_B}\n")
-file.write("\t\t\t\t\t\t@echo \"\\t\\t${BOLD}${RED}libft.a deleted.${END}\"\n")
+if libft_ok == "o":
+    file.write("\t\t\t\t\t\t@echo \"\\t\\t${BOLD}${RED}libft.a deleted.${END}\"\n")
 file.write("\t\t\t\t\t\t@echo \"\\t\\t${BOLD}${RED}Program " + prog + " deleted.${END}\"\n")
 if bonus == "o":
     file.write("\t\t\t\t\t\t@echo \"\\t\\t${BOLD}${RED}Program " + prog_b + " deleted.${END}\"\n")
