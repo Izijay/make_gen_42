@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/03/16 18:10:05 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/04/07 13:03:20 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -188,5 +188,5 @@ file.close()
 print(f"\n\t\t{Fore.RED}!!Attention!!{Fore.RESET}")
 print(f"--- {Style.BRIGHT}Les couleurs sont prevues pour Linux.{Style.RESET_ALL}")
 print("Si vous etes sur macOS, vous devrez peut-etre changez les codes couleur en haut du makefile.\n\n")
-print(f"--- Les {Style.BRIGHT}WILDCARDS{Style.RESET_ALL} sont, normalement, interdits.\nPensez donc a modifier vos fichiers sources a la main dant le makefile.\n\n")
+print(f"--- Les {Style.BRIGHT}WILDCARDS{Style.RESET_ALL} sont, normalement, interdits.\nPensez donc a modifier vos fichiers sources a la main dans le makefile.\n\n")
 print(f"{Style.BRIGHT}Merci d'utiliser Makefile_generator et a bientot !!{Style.RESET_ALL}")
