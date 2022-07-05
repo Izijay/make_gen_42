@@ -6,17 +6,15 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/05 16:38:22 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/07/05 23:35:30 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
+import os, glob, platform
 from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
-import os
 from os import path
-import platform
-import glob
 
 # Create Window
 root = Tk()
@@ -25,6 +23,8 @@ if platform.system() == 'Linux':
     root.geometry("430x600")
 elif platform.system() == 'Windows': 
     root.geometry("550x655")
+else:
+    root.geometry("430x600")
 root.resizable(False, False)
 root.config(bg='#4065A4')
 
@@ -245,13 +245,14 @@ Label(frame, text="(pwd in your project's root directory and paste here.)", bg='
 
 def list_files(list):
     breaker = 5
-    i = 1
+    i = 0
     srcs = ""
     for file in list:
-        if "bonus" in file:
-            continue
         if i == breaker and i != len(list):
-            srcs = srcs + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
+            if platform.system() == "Windows":
+                srcs = srcs + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
+            else:
+                srcs = srcs + file.rsplit("/")[-1] + " \\\n\t\t\t\t"
             i = 0   
         else:
             if platform.system() == 'Windows':
@@ -262,29 +263,21 @@ def list_files(list):
     return srcs
 
 
-def list_files_bonus(list):
-    breaker = 5
-    i = 1
-    srcs_bonus = ""
+def list_includes(list, inc_entry):
+    includes = ""
     for file in list:
-        if i == breaker and i != len(list):
-            srcs_bonus = srcs_bonus + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
-            i = 0
+        if platform.system() == 'Windows':
+            includes += inc_entry + "/" + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
         else:
-            if platform.system() == 'Windows':
-                srcs_bonus += file.rsplit("\\")[-1] + " "
-            else:
-                srcs_bonus += file.rsplit("/")[-1] + " "
-            i += 1
-    return srcs_bonus
-
+            includes += file.rsplit("/")[-1] + " \\\n\t\t\t\t"
+    # delete last \n
+    includes = includes[:-6]
+    return includes
+            
 
 def generate():
     """
     Generate the Makefile
-    """
-    """TO DO:
-    - !!! get all srcs filenames in src directory to replace wildcards !!!
     """
     # Get the values of the radio buttons:
     if language.get() == "C":
@@ -327,16 +320,28 @@ def generate():
     elif not path.exists(absolute_path):
         messagebox.showwarning("Error", "Directory does not exist\n(pwd in your project's root directory and paste here.)")
         return
-    listOfFiles = glob.glob(absolute_path + src + "/**/*.py", recursive=True)
-    srcs = list_files(listOfFiles)
-    if bonus.get() == "y":
-        listOfFilesBonus = glob.glob(absolute_path + src_bonus + "/**/*_bonus.py", recursive=True)
-        srcs_bonus = list_files_bonus(listOfFilesBonus)
-    #if lang == "C":
-     #   listOfFiles = glob.glob(absolute_path + "/**/*.c", recursive=True)
-    #elif lang == "C++":
-     #   listOfFiles = glob.glob(absolute_path + "/**/*.cpp", recursive=True)
     # Get the list of files:
+    #listOfFiles = glob.glob(absolute_path + src + "/**/*.py", recursive=True)
+    if lang == "C":
+        listOfFiles = glob.glob(absolute_path + "/" + src + "/**/*.c", recursive=True)
+        srcs = list_files(listOfFiles)
+        listOfIncludes = glob.glob(absolute_path + "/" + inc + "/**/*.h", recursive=True)
+        includes = list_includes(listOfIncludes, inc)
+        if bonus.get() == "y":
+            listOfFilesBonus = glob.glob(absolute_path + "/" + src_bonus + "/**/*.c", recursive=True)
+            srcs_bonus = list_files(listOfFilesBonus)
+            listOfIncludesBonus = glob.glob(absolute_path + "/" + inc_bonus + "/**/*.h", recursive=True)
+            includes_bonus = list_includes(listOfIncludesBonus, inc_bonus)
+    elif lang == "C++":
+        listOfFiles = glob.glob(absolute_path + "/**/*.cpp", recursive=True)
+        srcs = list_files(listOfFiles)
+        listOfIncludes = glob.glob(absolute_path + "/**/*.hpp", recursive=True)
+        includes = list_includes(listOfIncludes, inc)
+        if bonus.get() == "y":
+            listOfFilesBonus = glob.glob(absolute_path + "/" + src_bonus + "/**/*.cpp", recursive=True)
+            srcs_bonus = list_files(listOfFilesBonus)
+            listOfIncludesBonus = glob.glob(absolute_path + "/" + inc_bonus + "/**/*.hpp", recursive=True)
+            includes_bonus = list_includes(listOfIncludesBonus, inc_bonus)
     # Create the Makefile:
     f = filedialog.asksaveasfile(title="Save as...", initialdir=os.getcwd(), mode="w")
     if f is None:
@@ -359,20 +364,23 @@ def generate():
         f.write("\nMLX_A\t\t\t=\t./" + mlx_a)
     f.write("\nOBJ_DIR\t\t\t=\t.obj")
     if bonus.get() == "y":
-        f.write("\nOBJ_BONUS_DIR\t=\t.obj_bonus")
+        f.write("\n\nOBJ_BONUS_DIR\t=\t.obj_bonus")
     if lang == "C":
         f.write("\n\nvpath %.c $(foreach dir, $(SRC_DIR), $(dir):)")
     else:
         f.write("\n\nvpath %.cpp $(foreach dir, $(SRC_DIR), $(dir):)")
     if bonus.get() == "y":
-        f.write("\nvpath %.c $(foreach dir, $(SRC_BONUS_DIR), $(dir):)")
+        if lang == "C":
+            f.write("\nvpath %.c $(foreach dir, $(SRC_BONUS_DIR), $(dir):)")
+        else:
+            f.write("\nvpath %.cpp $(foreach dir, $(SRC_BONUS_DIR), $(dir):)")
     f.write("\n\n# library -----------------------------------------------------------")
     f.write("\n\nSRC\t\t\t=\t" + srcs + "\n\n")
     if bonus.get() == "y":
         f.write("SRC_BONUS\t=\t" + srcs_bonus +"\n\n")
-    f.write("INC\t\t\t=\t$(wildcard " + inc + "/*.h*)\n\n")
+    f.write("INC\t\t\t=\t" + includes + "\n\n")
     if bonus.get() == "y":
-        f.write("INC_BONUS\t\t=\t$(wildcard " + inc_bonus + "/*.h*)\n\n")
+        f.write("INC_BONUS\t\t=\t" + includes_bonus + "\n\n")
     if language.get() == "C":
         f.write("OBJ\t\t\t=\t$(addprefix $(OBJ_DIR)/, $(SRC:%.c=%.o))\n\n")
     else:
@@ -397,14 +405,14 @@ def generate():
         f.write("IFLAGS	\t\t=	-I " + inc + "/ -I /usr/include\n")
     if bonus.get() == "y":
         if libft.get() == "y" and mlx.get() == "n":
-            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + " -I " + libft_ok + "/includes -I /usr/include\n")
+            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + "/ -I " + libft_ok + "/includes -I /usr/include\n")
         elif mlx.get() == "y" and libft.get() == "y":
             f.write(
-                "IFLAGS_B\t\t=	-I " + inc_bonus + " -I " + libft_ok + "/includes -I " + mlx_ok + " -I /usr/include\n")
+                "IFLAGS_B\t\t=	-I " + inc_bonus + "/ -I " + libft_ok + "/includes -I " + mlx_ok + " -I /usr/include\n")
         elif mlx.get() == "y" and libft.get() == "n":
-            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + " -I " + mlx_ok + " -I /usr/include\n")
+            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + "/ -I " + mlx_ok + " -I /usr/include\n")
         else:
-            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + " -I /usr/include\n")
+            f.write("IFLAGS_B\t\t=	-I " + inc_bonus + "/ -I /usr/include\n")
     if mlx.get() == "y":
         f.write("LFLAGS\t\t\t=	-lmlx -lm -lX11 -lXext\n")
     f.write("""
@@ -417,35 +425,35 @@ _BLUE	=	$'\\e[34m
 _PURPLE	=	$'\\e[35m
 _CYAN	=	$'\\e[36m
 _WHITE	=	$'\\e[37m\n\n""")
-    f.write("# main part ---------------------------------------------------------\n\n")
+    f.write("# main part ---------------------------------------------------------\n")
     if lang == "C":
         f.write("""
 $(OBJ_DIR)/%.o : %.c $(INC)
 \t\t@echo "Compiling $(_YELLOW)$@$(_WHITE) ... \\c"
 \t\t@mkdir -p $(OBJ_DIR)
-\t\t$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
-\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n""")
+\t\t@$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
+\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n\n""")
         if bonus.get() == "y":
             f.write("""
 $(OBJ_BONUS_DIR)/%.o : %.c $(INC_BONUS) 
 \t\t@echo "Compiling $(_YELLOW)$@$(_WHITE) ... \\c"
 \t\t@mkdir -p $(OBJ_BONUS_DIR)
-\t\t$(CC) $(CFLAGS) $(IFLAGS_B) -c $< -o $@
-\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n""")
+\t\t@$(CC) $(CFLAGS) $(IFLAGS_B) -c $< -o $@
+\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n\n""")
     if lang == "C++":
         f.write("""
 $(OBJ_DIR)/%.o : %.cpp $(INC)
 \t\t@echo "Compiling $(_YELLOW)$@$(_WHITE) ... \\c"
 \t\t@mkdir -p $(OBJ_DIR)
-\t\t$(CXX) $(CPPFLAGS) $(IFLAGS) -c $< -o $@
-\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n""")
+\t\t@$(CXX) $(CPPFLAGS) $(IFLAGS) -c $< -o $@
+\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n\n""")
         if bonus.get() == "y":
             f.write("""
 $(OBJ_BONUS_DIR)/%.o : %.cpp $(INC_BONUS) 
 \t\t@echo "Compiling $(_YELLOW)$@$(_WHITE) ... \\c"
 \t\t@mkdir -p $(OBJ_BONUS_DIR)
-\t\t$(CXX) $(CPPFLAGS) $(IFLAGS_B) -c $< -o $@
-\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n""")
+\t\t@$(CXX) $(CPPFLAGS) $(IFLAGS_B) -c $< -o $@
+\t\t@echo \"$(_GREEN)DONE$(_WHITE)\"\n\n""")
 
     if libft.get() == "y" and mlx.get() == "y":
         f.write("all: $(LIBFT_A) $(MLX_A) $(NAME)\n")
@@ -472,55 +480,37 @@ $(MLX_A):
             f.write("\nbonus: $(MLX_A) $(NAME_BONUS)\n")
         else:
             f.write("\nbonus: $(NAME_BONUS)\n")
-    if libft.get() == "y" and mlx.get() == "y":
-        f.write("""
+    f.write("""
 $(NAME): $(OBJ)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) $(LIBFT_A) -L $(MLX) $(LFLAGS) -o $(NAME)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
-    elif libft.get() == "y" and mlx.get() == "n":
-        f.write("""
-$(NAME): $(OBJ)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) $(LIBFT_A) -o $(NAME)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
-    elif libft.get() == "n" and mlx.get() == "y":
-        f.write("""
-$(NAME): $(OBJ)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) -L $MLX) $(LFLAGS) -o $(NAME)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
-    else:
-        f.write("""
-$(NAME): $(OBJ)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) -o $(NAME)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
-    if bonus.get() == "y":
+\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c""")
+    if lang == "C++":
+        f.write("\n\t\t$(CXX) $(CPPFLAGS) $(OBJ) $(IFLAGS) -o $(NAME)")
+    if lang == "C":
         if libft.get() == "y" and mlx.get() == "y":
-            f.write("""
-$(NAME_BONUS): $(OBJ_BONUS)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) $(LIBFT_A) -L $(MLX) $(LFLAGS) -o $(NAME_BONUS)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+            f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) $(LIBFT_A) -L $(MLX) $(LFLAGS) -o $(NAME)")
         elif libft.get() == "y" and mlx.get() == "n":
-            f.write("""
-$(NAME_BONUS): $(OBJ_BONUS)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) $LIBFT_A) -o $(NAME_BONUS)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+            f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) $(LIBFT_A) -o $(NAME)")
         elif libft.get() == "n" and mlx.get() == "y":
-            f.write("""
-$(NAME_BONUS): $(OBJ_BONUS)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -L $(MLX) $(LFLAGS) -o $(NAME_BONUS)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+            f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) -L $MLX) $(LFLAGS) -o $(NAME)")
         else:
-            f.write("""
+            f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ) $(IFLAGS) -o $(NAME)")
+    f.write("\n\t\t@echo \"$(_GREEN)DONE$(_WHITE)\\n-----\"\n")
+    if bonus.get() == "y":
+        f.write("""
 $(NAME_BONUS): $(OBJ_BONUS)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c"
-\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -o $(NAME_BONUS)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c""")
+        if lang == "C++":
+             f.write("\n\t\t$(CXX) $(CPPFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -o $(NAME_BONUS)")
+        if lang == "C":
+            if libft.get() == "y" and mlx.get() == "y":
+                f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) $(LIBFT_A) -L $(MLX) $(LFLAGS) -o $(NAME_BONUS)")
+            elif libft.get() == "y" and mlx.get() == "n":
+                f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) $LIBFT_A) -o $(NAME_BONUS)")
+            elif libft.get() == "n" and mlx.get() == "y":
+                f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -L $(MLX) $(LFLAGS) -o $(NAME_BONUS)")
+            else:
+                f.write("\n\t\t$(CC) $(CFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -o $(NAME_BONUS)")
+        f.write("\n\t\t@echo \"$(_GREEN)DONE$(_WHITE)\\n-----\"\n")
     f.write("""
 clean:
 \t\t@echo "$(_WHITE)Deleting Objects Directory $(_YELLOW)$(OBJ_DIR)$(_WHITE) ... \\c"
