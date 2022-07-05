@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/04 15:30:41 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/07/05 13:01:35 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,12 +14,16 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
 import os
+import platform
 import glob
 
 # Create Window
 root = Tk()
 root.title("Makefile Generator")
-root.geometry("430x600")
+if platform.system() == 'Linux':
+    root.geometry("430x600")
+elif platform.system() == 'Windows': 
+    root.geometry("550x655")
 root.resizable(False, False)
 root.config(bg='#4065A4')
 
@@ -282,10 +286,9 @@ def generate():
     if absolute_path == "":
         messagebox.showwarning("Error", "Please fill all the entries")
         return
-    with os.scandir() as i:
-        for entry in i:
-         if entry.is_file():
-              print(entry.name)
+    listOfFiles = glob.glob(absolute_path + src + "/*.py")
+    for file in listOfFiles:
+        print(file.split("/")[-1])
     # Create the Makefile:
     f = filedialog.asksaveasfile(title="Save as...", initialdir=os.getcwd(), mode="w")
     if f is None:
