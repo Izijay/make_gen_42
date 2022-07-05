@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/05 23:35:30 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/07/05 23:42:44 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -63,6 +63,16 @@ def enable_mlx_entry():
     entry_mlx_a.configure(state='normal')
 
 
+def disable_both():
+    disable_mlx_entry()
+    disable_libft_entry()
+    
+    
+def enable_both():
+    enable_libft_entry()
+    enable_mlx_entry()
+    
+
 def disable_bonus_entry():
     entry_bin_bonus.delete(0, END)
     entry_bin_bonus.configure(state='disabled')
@@ -112,9 +122,11 @@ language = StringVar()
 language.set(None)
 Label(frame, text="Language:\t\t", bg='#eeeeee', fg='black', font=("Calibri", 12, "bold")).grid(row=0, column=0,
                                                                                                 sticky=W)
-Radiobutton(frame, text="C", variable=language, value="C", bg='#eeeeee', font=('Calibri', 12)).grid(row=0, column=1,
+Radiobutton(frame, text="C", variable=language, value="C", bg='#eeeeee', font=('Calibri', 12),
+            command=enable_both).grid(row=0, column=1,
                                                                                                     sticky=W)
-Radiobutton(frame, text="C++", variable=language, value="C++", bg='#eeeeee', font=('Calibri', 12)).grid(row=0, column=1,
+Radiobutton(frame, text="C++", variable=language, value="C++", bg='#eeeeee', font=('Calibri', 12),
+            command=disable_both).grid(row=0, column=1,
                                                                                                         sticky=E)
 # Libft:
 libft = StringVar()
