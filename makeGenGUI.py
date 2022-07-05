@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/05 13:01:35 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/07/05 16:38:22 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,6 +14,7 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
 import os
+from os import path
 import platform
 import glob
 
@@ -232,13 +233,50 @@ entry_inc_bonus.grid(row=13, column=1, sticky=W)
 
 # Absolute path to project:
 entry_project_path = StringVar()
-entry_project_path.set("ex: /mnt/nfs/homes/login/.../")
-Label(frame, text="Absolute path to project:\t", bg='#eeeeee', fg='black', font=("Calibri", 12, "bold")).grid(row=14,
+entry_project_path.set("ex: /mnt/nfs/homes/login/cub3d/")
+Label(frame, text="Absolute path to your project:\t", bg='#eeeeee', fg='black', font=("Calibri", 12, "bold")).grid(row=14,
                                                                                                           column=0,
                                                                                                           sticky=W)
 entry_project_path = Entry(frame, textvariable=entry_project_path, bg='white', fg='black', font=('Helvetica', 12),
                         disabledbackground='grey')
 entry_project_path.grid(row=14, column=1, sticky=W)
+Label(frame, text="(pwd in your project's root directory and paste here.)", bg='#eeeeee', fg='black', font=("Calibri", 8, "bold")).grid(row=15, column=0, sticky=NW)
+
+
+def list_files(list):
+    breaker = 5
+    i = 1
+    srcs = ""
+    for file in list:
+        if "bonus" in file:
+            continue
+        if i == breaker and i != len(list):
+            srcs = srcs + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
+            i = 0   
+        else:
+            if platform.system() == 'Windows':
+                srcs += file.rsplit("\\")[-1] + " "
+            else:
+                srcs += file.rsplit("/")[-1] + " "
+            i += 1
+    return srcs
+
+
+def list_files_bonus(list):
+    breaker = 5
+    i = 1
+    srcs_bonus = ""
+    for file in list:
+        if i == breaker and i != len(list):
+            srcs_bonus = srcs_bonus + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
+            i = 0
+        else:
+            if platform.system() == 'Windows':
+                srcs_bonus += file.rsplit("\\")[-1] + " "
+            else:
+                srcs_bonus += file.rsplit("/")[-1] + " "
+            i += 1
+    return srcs_bonus
 
 
 def generate():
@@ -284,11 +322,21 @@ def generate():
             return
     absolute_path = entry_project_path.get()
     if absolute_path == "":
-        messagebox.showwarning("Error", "Please fill all the entries")
+        messagebox.showwarning("Error", "Please fill the absolute path entry.\n(pwd in your project's root directory and paste here.)")
         return
-    listOfFiles = glob.glob(absolute_path + src + "/*.py")
-    for file in listOfFiles:
-        print(file.split("/")[-1])
+    elif not path.exists(absolute_path):
+        messagebox.showwarning("Error", "Directory does not exist\n(pwd in your project's root directory and paste here.)")
+        return
+    listOfFiles = glob.glob(absolute_path + src + "/**/*.py", recursive=True)
+    srcs = list_files(listOfFiles)
+    if bonus.get() == "y":
+        listOfFilesBonus = glob.glob(absolute_path + src_bonus + "/**/*_bonus.py", recursive=True)
+        srcs_bonus = list_files_bonus(listOfFilesBonus)
+    #if lang == "C":
+     #   listOfFiles = glob.glob(absolute_path + "/**/*.c", recursive=True)
+    #elif lang == "C++":
+     #   listOfFiles = glob.glob(absolute_path + "/**/*.cpp", recursive=True)
+    # Get the list of files:
     # Create the Makefile:
     f = filedialog.asksaveasfile(title="Save as...", initialdir=os.getcwd(), mode="w")
     if f is None:
@@ -300,9 +348,9 @@ def generate():
         f.write("\n\nCC\t\t\t=\tgcc")
     else:
         f.write("\n\nCXX\t\t\t\t=\tc++")
-    f.write("\n\nSRC_DIR\t\t\t=\t$(shell find " + src + " -type d)")
+    f.write("\n\nSRC_DIR\t\t\t=\t$(shell find " + src + " -type d)\n")
     if bonus.get() == "y":
-        f.write("\nSRC_BONUS_DIR\t=\t$(shell find " + src_bonus + " -type d)")
+        f.write("\nSRC_BONUS_DIR\t=\t$(shell find " + src_bonus + " -type d)\n")
     if libft.get() == "y":
         f.write("\nLIBFT\t\t\t=\t./" + libft_ok)
         f.write("\nLIBFT_A\t\t\t=\t./" + libft_a)
@@ -319,9 +367,9 @@ def generate():
     if bonus.get() == "y":
         f.write("\nvpath %.c $(foreach dir, $(SRC_BONUS_DIR), $(dir):)")
     f.write("\n\n# library -----------------------------------------------------------")
-    f.write("\n\nSRC\t\t\t=\t$(wildcard " + src + "/*.c*)\n\n")
+    f.write("\n\nSRC\t\t\t=\t" + srcs + "\n\n")
     if bonus.get() == "y":
-        f.write("SRC_BONUS\t=\t$(wildcard " + src_bonus + "/*.c*)\n\n")
+        f.write("SRC_BONUS\t=\t" + srcs_bonus +"\n\n")
     f.write("INC\t\t\t=\t$(wildcard " + inc + "/*.h*)\n\n")
     if bonus.get() == "y":
         f.write("INC_BONUS\t\t=\t$(wildcard " + inc_bonus + "/*.h*)\n\n")
