@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/05 23:42:44 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/07/06 09:50:19 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,7 +20,7 @@ from os import path
 root = Tk()
 root.title("Makefile Generator")
 if platform.system() == 'Linux':
-    root.geometry("430x600")
+    root.geometry("500x600")
 elif platform.system() == 'Windows': 
     root.geometry("550x655")
 else:
@@ -281,8 +281,8 @@ def list_includes(list, inc_entry):
         if platform.system() == 'Windows':
             includes += inc_entry + "/" + file.rsplit("\\")[-1] + " \\\n\t\t\t\t"
         else:
-            includes += file.rsplit("/")[-1] + " \\\n\t\t\t\t"
-    # delete last \n
+            includes += inc_entry + "/" + file.rsplit("/")[-1] + " \\\n\t\t\t\t"
+    # delete last backslash
     includes = includes[:-6]
     return includes
             
@@ -355,7 +355,7 @@ def generate():
             listOfIncludesBonus = glob.glob(absolute_path + "/" + inc_bonus + "/**/*.hpp", recursive=True)
             includes_bonus = list_includes(listOfIncludesBonus, inc_bonus)
     # Create the Makefile:
-    f = filedialog.asksaveasfile(title="Save as...", initialdir=os.getcwd(), mode="w")
+    f = filedialog.asksaveasfile(title="Save as...", initialdir=absolute_path, mode="w")
     if f is None:
         return
     f.write("\nNAME\t\t\t=\t" + name)
@@ -494,7 +494,7 @@ $(MLX_A):
             f.write("\nbonus: $(NAME_BONUS)\n")
     f.write("""
 $(NAME): $(OBJ)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c""")
+\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c\"""")
     if lang == "C++":
         f.write("\n\t\t$(CXX) $(CPPFLAGS) $(OBJ) $(IFLAGS) -o $(NAME)")
     if lang == "C":
@@ -510,7 +510,7 @@ $(NAME): $(OBJ)
     if bonus.get() == "y":
         f.write("""
 $(NAME_BONUS): $(OBJ_BONUS)
-\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c""")
+\t\t@echo "-----\\nCreating Binary File $(_YELLOW)$@$(_WHITE) ... \\c\"""")
         if lang == "C++":
              f.write("\n\t\t$(CXX) $(CPPFLAGS) $(OBJ_BONUS) $(IFLAGS_B) -o $(NAME_BONUS)")
         if lang == "C":
@@ -526,10 +526,12 @@ $(NAME_BONUS): $(OBJ_BONUS)
     f.write("""
 clean:
 \t\t@echo "$(_WHITE)Deleting Objects Directory $(_YELLOW)$(OBJ_DIR)$(_WHITE) ... \\c"
-\t\t@rm -rf $(OBJ_DIR) $(OBJ_DIR_BONUS)
-\t\t@make clean -C $(MLX)
-\t\t@make clean -C $(LIBFT)
-\t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+\t\t@rm -rf $(OBJ_DIR) $(OBJ_DIR_BONUS)\n""")
+    if libft.get() == "y":
+        f.write("\t\t@make clean -C $(LIBFT)\n")
+    if mlx.get() == "y":
+        f.write("\t\t@make clean -C $(MLX)\n")
+    f.write("\t\t@echo \"$(_GREEN)DONE$(_WHITE)\\n-----\"\n")
     f.write("""
 fclean: clean
 \t\t@echo "$(_WHITE)Deleting Binary File $(_YELLOW)$(NAME)$(_WHITE) ... \\c"
