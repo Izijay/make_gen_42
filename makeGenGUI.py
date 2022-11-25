@@ -6,7 +6,7 @@
 #    By: mdupuis <mdupuis@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/03/09 19:03:29 by mdupuis           #+#    #+#              #
-#    Updated: 2022/07/06 09:50:19 by mdupuis          ###   ########.fr        #
+#    Updated: 2022/11/25 17:56:47 by mdupuis          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -526,7 +526,9 @@ $(NAME_BONUS): $(OBJ_BONUS)
     f.write("""
 clean:
 \t\t@echo "$(_WHITE)Deleting Objects Directory $(_YELLOW)$(OBJ_DIR)$(_WHITE) ... \\c"
-\t\t@rm -rf $(OBJ_DIR) $(OBJ_DIR_BONUS)\n""")
+\t\t@rm -rf $(OBJ_DIR)\n""")
+    if bonus.get() == "y":
+        f.write("\t\t@rm -rf $(OBJ_BONUS_DIR)\n")
     if libft.get() == "y":
         f.write("\t\t@make clean -C $(LIBFT)\n")
     if mlx.get() == "y":
@@ -535,8 +537,12 @@ clean:
     f.write("""
 fclean: clean
 \t\t@echo "$(_WHITE)Deleting Binary File $(_YELLOW)$(NAME)$(_WHITE) ... \\c"
-\t\t@rm -f $(NAME) $(NAME_BONUS)
+\t\t@rm -f $(NAME)
 \t\t@echo "$(_GREEN)DONE$(_WHITE)\\n-----\"\n""")
+    if bonus.get() == "y":
+        f.write("\t\t@echo \"$(_WHITE)Deleting Binary File $(_YELLOW)$(NAME_BONUS)$(_WHITE) ... \\c\"\n")
+        f.write("\t\t@rm -f $(NAME_BONUS)\n")
+        f.write("\t\t@echo \"$(_GREEN)DONE$(_WHITE)\\n-----\"\n")
     f.write("\nre:\t\tfclean all\n\n")
     f.write(".PHONY:\t\tall bonus clean fclean re\n")
     f.close()
